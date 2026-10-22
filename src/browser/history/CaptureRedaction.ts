@@ -1,6 +1,17 @@
 import { isSafeNumber, type LosslessNumber } from "lossless-json";
 import type { WebNetworkCaptureRecord } from "../../domain/webNetworkCapture.js";
-import { parseRecordedTransportUrl } from "../../domain/recordedTransportUrl.js";
+import {
+  isSensitiveQueryParameterName,
+  parseRecordedTransportUrl,
+  redactSensitiveUrlQuery,
+  SENSITIVE_QUERY_PARAMETER_NAMES,
+} from "../../domain/recordedTransportUrl.js";
+
+export {
+  isSensitiveQueryParameterName,
+  redactSensitiveUrlQuery,
+  SENSITIVE_QUERY_PARAMETER_NAMES,
+};
 
 type Redaction = WebNetworkCaptureRecord["redactions"][number];
 const CREDENTIAL_HEADERS = new Set([
@@ -8,6 +19,14 @@ const CREDENTIAL_HEADERS = new Set([
   "proxy-authorization",
   "cookie",
   "set-cookie",
+  "x-api-key",
+  "api-key",
+  "x-auth-token",
+  "x-access-token",
+  "x-amz-security-token",
+  "x-snowflake-authorization",
+  "x-csrf-token",
+  "x-xsrf-token",
 ]);
 /** HTTP credential names apply equally to recorded headers and gRPC-web trailers. */
 export const isCaptureCredentialHeader = (name: string): boolean =>
@@ -48,14 +67,23 @@ export class CaptureRedaction {
     });
   }
 
-  /** Preserve exact text unless explicitly sensitive or known transport URL userinfo. */
+  /** Preserve exact text unless explicitly sensitive or known transport URL userinfo/query secrets. */
   text(value: string, pointer: string, transportUrl = false): string | null {
     let result = value;
     if (transportUrl) {
       const { credentials } = parseRecordedTransportUrl(value);
       if (credentials === "ambiguous") return this.credential(pointer);
+      let redactedTransport = false;
       if (credentials !== null) {
         result = `${value.slice(0, credentials.start)}${value.slice(credentials.end)}`;
+        redactedTransport = true;
+      }
+      const queryRedacted = redactSensitiveUrlQuery(result);
+      if (queryRedacted.redacted) {
+        result = queryRedacted.url;
+        redactedTransport = true;
+      }
+      if (redactedTransport) {
         this.redactions.push({ pointer, reason: "transport-credential" });
       }
     }
@@ -101,7 +129,10 @@ export class CaptureRedaction {
       (/^\/(request|response)\/headers\/\d+\/value$/.test(pointer) &&
         typeof parent.name === "string" &&
         isCaptureCredentialHeader(parent.name)) ||
-      /^\/(request|response)\/cookies\/\d+\/value$/.test(pointer)
+      /^\/(request|response)\/cookies\/\d+\/value$/.test(pointer) ||
+      (/^\/request\/queryString\/\d+\/value$/.test(pointer) &&
+        typeof parent.name === "string" &&
+        isSensitiveQueryParameterName(parent.name))
     );
   }
 

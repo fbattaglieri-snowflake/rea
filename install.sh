@@ -18,7 +18,7 @@ version_pattern="${numeric_identifier}\\.${numeric_identifier}\\.${numeric_ident
 version="${REA_VERSION:-}"
 version_requested=false
 dry_run=false
-start_setup=true
+start_setup=false
 verbose=false
 
 fail() {
@@ -138,7 +138,7 @@ main() {
     fail "npm cannot install an exact version with build metadata. Pass a version without build metadata, then retry."
   fi
 
-  install_args=(install --global)
+  install_args=(install --global --ignore-scripts)
   if [ "$platform" = "Linux" ]; then
     install_args+=(--prefix "$HOME/.local")
     install_bin="$HOME/.local/bin/rea"

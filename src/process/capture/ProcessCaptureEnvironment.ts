@@ -6,14 +6,32 @@ interface ProcessCaptureEnvironmentOptions {
   readonly hostEnvironment: Readonly<Record<string, string | undefined>>;
 }
 
-/** Build the child environment from the host plus caller-selected overrides. */
+export const ALLOWED_PROCESS_CAPTURE_ENVIRONMENT_KEYS = [
+  "DBUS_SESSION_BUS_ADDRESS",
+  "DISPLAY",
+  "HOME",
+  "LANG",
+  "LC_ALL",
+  "LD_LIBRARY_PATH",
+  "PATH",
+  "SystemRoot",
+  "TEMP",
+  "TERM",
+  "TMP",
+  "TMPDIR",
+  "WAYLAND_DISPLAY",
+  "XAUTHORITY",
+  "XDG_RUNTIME_DIR",
+] as const;
+
+/** Build the child environment from the host allowlist plus caller-selected overrides. */
 export const makeProcessCaptureEnvironment = (
   options: ProcessCaptureEnvironmentOptions,
 ): Record<string, string> => ({
   ...Object.fromEntries(
-    Object.entries(options.hostEnvironment).filter(
-      (entry): entry is [string, string] => entry[1] !== undefined,
-    ),
+    ALLOWED_PROCESS_CAPTURE_ENVIRONMENT_KEYS.map(
+      (name) => [name, options.hostEnvironment[name]] as const,
+    ).filter((entry): entry is [string, string] => entry[1] !== undefined),
   ),
   ...options.scenario.environment,
   TERM:

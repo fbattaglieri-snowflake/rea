@@ -5,6 +5,7 @@ import { urlDeclaresQueryOrFragment } from "./urlComponents.js";
 import {
   parseRecordedTransportUrl,
   parseUrlQueryParameterNames,
+  redactSensitiveUrlQuery,
 } from "./recordedTransportUrl.js";
 
 const parseExactOrigin = (value: string): string | undefined => {
@@ -248,7 +249,7 @@ export const sanitizedBrowserUrlSchema = z.object({
 });
 export type SanitizedBrowserUrl = z.infer<typeof sanitizedBrowserUrlSchema>;
 
-/** Preserve local URL data while removing only URL userinfo credentials. */
+/** Preserve local URL data while removing URL userinfo credentials and sensitive query parameters. */
 export const sanitizeBrowserUrl = (value: string): SanitizedBrowserUrl => {
   let parsed: URL;
   try {
@@ -265,14 +266,15 @@ export const sanitizeBrowserUrl = (value: string): SanitizedBrowserUrl => {
   }
   const hadCredentials = parsed.username !== "" || parsed.password !== "";
   const names = [...parseUrlQueryParameterNames(parsed.search)];
-  const sanitizedUrl = hadCredentials
+  const withoutUserInfo = hadCredentials
     ? removeUrlUserInfo(value, parsed)
     : value;
+  const queryRedacted = redactSensitiveUrlQuery(withoutUserInfo);
   return {
-    url: sanitizedUrl,
+    url: queryRedacted.url,
     origin: parsed.origin === "null" ? null : parsed.origin,
     query_parameter_names: names,
-    redacted: hadCredentials,
+    redacted: hadCredentials || queryRedacted.redacted,
   };
 };
 

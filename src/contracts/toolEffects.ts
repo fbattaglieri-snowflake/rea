@@ -776,6 +776,25 @@ export const TARGET_CONTENT_FREE_TOOLS: ReadonlySet<string> = new Set([
 export const toolReturnsTargetContent = (name: string): boolean =>
   !TARGET_CONTENT_FREE_TOOLS.has(name);
 
+/**
+ * Default static-only security gate: blocks any tool that executes foreign
+ * target code, mutates a connected device, or mutates the target unless the
+ * operator explicitly sets `REA_ALLOW_RUNTIME_EXECUTION=true`.
+ */
+export const isToolBlockedByStaticSecurityPolicy = (
+  name: string,
+  environment: Readonly<NodeJS.ProcessEnv> = process.env,
+): boolean => {
+  if (environment.REA_ALLOW_RUNTIME_EXECUTION === "true") return false;
+  const audited = TOOL_EFFECTS[name];
+  if (audited === undefined) return false;
+  return (
+    audited.executesForeignCode ||
+    audited.mutatesDevice ||
+    audited.mutatesTarget
+  );
+};
+
 /** Resolve the audited metadata for one public tool. */
 export const toolContractMetadata = (name: string) => {
   const audited = TOOL_EFFECTS[name];

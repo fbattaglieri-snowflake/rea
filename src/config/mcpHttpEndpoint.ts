@@ -21,12 +21,25 @@ export const mcpHttpPortSchema = z
   .transform(Number)
   .pipe(mcpHttpListenerPortSchema);
 
-const mcpHttpHostSchema = z.string().trim().min(1);
+const isLoopbackHost = (value: string): boolean => {
+  const lower = value.toLowerCase();
+  if (lower === "localhost" || lower === "::1" || lower === "[::1]")
+    return true;
+  if (/^127(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}$/u.test(lower))
+    return true;
+  return false;
+};
+
+const mcpHttpHostSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .refine(isLoopbackHost);
 
 export const MCP_HTTP_PORT_CONSTRAINT =
   "MCP_PORT must be a decimal integer between 0 and 65535.";
 export const MCP_HTTP_HOST_CONSTRAINT =
-  "MCP_HOST must be a non-empty host name or IP address.";
+  "MCP_HOST must be a loopback host name or IP address (127.0.0.1, ::1, or localhost).";
 
 /** Where the streamable HTTP listener binds. */
 export interface McpHttpEndpoint {
@@ -42,7 +55,15 @@ export const parseMcpHttpEndpoint = (
   const issues: ConfigurationSettingIssue[] = [];
   let host = overrides.host ?? DEFAULT_MCP_HTTP_HOST;
   let port = overrides.port ?? DEFAULT_MCP_HTTP_PORT;
-  if (overrides.host === undefined && environment.MCP_HOST !== undefined) {
+  if (overrides.host !== undefined) {
+    const parsed = mcpHttpHostSchema.safeParse(overrides.host);
+    if (parsed.success) host = parsed.data;
+    else
+      issues.push({
+        setting: "MCP_HOST",
+        constraint: MCP_HTTP_HOST_CONSTRAINT,
+      });
+  } else if (environment.MCP_HOST !== undefined) {
     const parsed = mcpHttpHostSchema.safeParse(environment.MCP_HOST);
     if (parsed.success) host = parsed.data;
     else

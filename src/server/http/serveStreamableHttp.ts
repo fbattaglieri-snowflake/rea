@@ -543,6 +543,11 @@ export const serveStreamableHttp = async (
     url = endpointUrl(bound);
     origin = new URL(url).origin;
     allowedHosts = hostHeaderAllowlist(host, bound.address);
+    if (allowedHosts === undefined) {
+      throw new Error(
+        `Refusing non-loopback MCP HTTP bind address (${bound.address}); unauthenticated HTTP is restricted to loopback.`,
+      );
+    }
   } catch (cause: unknown) {
     await prepareTransportShutdown().catch(() => undefined);
     throw new StreamableHttpListenError(cause);

@@ -10,8 +10,8 @@ for (const argument of arguments_)
     throw new Error(`Unknown skill metadata option: ${argument}`);
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const sourceRoot = join(root, ".agents/skills/reverse-engineer-anything");
-const outputRoot = join(root, "skills/reverse-engineer-anything");
+const sourceRoot = join(root, ".agents/skills/rea-static-reviewed");
+const outputRoot = join(root, "skills/rea-static-reviewed");
 const check = arguments_.has("--check");
 const current = (
   await readFile(join(sourceRoot, "SKILL.md"), "utf8")

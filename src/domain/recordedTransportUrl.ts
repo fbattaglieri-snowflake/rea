@@ -178,3 +178,55 @@ export const recordedPathSegments = (
   }
   return result;
 };
+
+export const SENSITIVE_QUERY_PARAMETER_NAMES = new Set([
+  "token",
+  "access_token",
+  "id_token",
+  "refresh_token",
+  "api_key",
+  "apikey",
+  "secret",
+  "password",
+  "passwd",
+  "sig",
+  "signature",
+  "jwt",
+  "pat",
+  "key",
+  "client_secret",
+]);
+
+export const isSensitiveQueryParameterName = (name: string): boolean =>
+  SENSITIVE_QUERY_PARAMETER_NAMES.has(name.toLowerCase());
+
+export const redactSensitiveUrlQuery = (
+  value: string,
+): { readonly url: string; readonly redacted: boolean } => {
+  const queryStart = value.indexOf("?");
+  if (queryStart === -1) return { url: value, redacted: false };
+  const hashStart = value.indexOf("#", queryStart);
+  const rawQuery =
+    hashStart === -1
+      ? value.slice(queryStart + 1)
+      : value.slice(queryStart + 1, hashStart);
+  if (rawQuery.length === 0) return { url: value, redacted: false };
+  let redacted = false;
+  const parts = rawQuery.split("&").map((segment) => {
+    const eqIndex = segment.indexOf("=");
+    if (eqIndex === -1) return segment;
+    const rawKey = segment.slice(0, eqIndex);
+    const decodedKey = formComponent(rawKey);
+    if (isSensitiveQueryParameterName(decodedKey)) {
+      redacted = true;
+      return `${rawKey}=[REDACTED]`;
+    }
+    return segment;
+  });
+  if (!redacted) return { url: value, redacted: false };
+  const suffix = hashStart === -1 ? "" : value.slice(hashStart);
+  return {
+    url: `${value.slice(0, queryStart + 1)}${parts.join("&")}${suffix}`,
+    redacted: true,
+  };
+};

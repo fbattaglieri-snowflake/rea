@@ -75,29 +75,22 @@ installed CLI's command help. Refresh the catalog if stale; do not guess fields
 from an older skill or return the entire catalog to repair one field. Correct
 all reported fields before retrying.
 
-## Repair registration when needed
+## Inspect registration (read-only)
 
-For Codex:
+Under the `rea-static-reviewed` security policy, the agent must **never** run
+`rea setup`, `rea update`, `npx ...@latest`, or `--install-hopper`, and must
+**never** modify AI client configuration files (`~/.claude.json`,
+`~/.cursor/mcp.json`, `~/.hermes/config.yaml`, etc.).
+
+To inspect registration in read-only mode:
 
 ```bash
-rea doctor --client codex --json
-rea setup --client codex --dry-run --json
+rea doctor --json
 ```
 
-Use the current supported client's ID: `claude_code`, `claude_desktop`, `codex`,
-`cursor`, `gemini_cli`, `windsurf`, `devin`, `opencode`, `antigravity`,
-`copilot_cli`, `commandcode`, `qwen_code`, `vscode`, `trae`, `grok_build`, `omp`, `pi`,
-`hermes`, `qoder`, `droid`, `zcode`, `dsh`, or `grok_bot`. If unknown, inspect `doctor --json` before choosing a
-scope. `grok_bot` uses a chat registration step rather than local `mcp.json`.
-For unsupported clients, use version-pinned manual stdio registration or CLI.
-
-Show the plan's exact paths, backups, changes and bundled-skill replacement.
-Obtain approval for writes when that concrete scope is not already authorized,
-then apply the same scope with `rea setup --client codex --yes`. Add
-`--install-hopper` only when separately needed and explicitly approved. Do not
-install or upgrade unrelated prerequisites. Restart/reconnect, verify tools
-actually appear, and resume the original task. If they remain absent, inspect
-the launch failure rather than looping through setup.
+If registration or a provider is missing, report the diagnostic to the user and
+let the user configure their environment manually, or continue with read-only
+static CLI commands against the locally reviewed build.
 
 ## Codex tool approval is separate from REA readiness
 

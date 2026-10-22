@@ -42,7 +42,10 @@ import {
   mcpResponseOverflowProjection,
   type ToolResultDelivery,
 } from "./ToolResultDelivery.js";
-import { toolReturnsTargetContent } from "../contracts/toolEffects.js";
+import {
+  isToolBlockedByStaticSecurityPolicy,
+  toolReturnsTargetContent,
+} from "../contracts/toolEffects.js";
 import {
   carriesTargetContentMarker,
   encodeToolResult,
@@ -269,7 +272,16 @@ export class EvidenceMcpServerCore extends RequestTrackingMcpServer {
     config: StandardToolRegistration,
     callback: ToolCallback<StandardSchemaWithJSON | undefined>,
   ): RegisteredTool {
-    return super.registerTool(name, config as never, callback as never);
+    const guardedCallback = ((...args: unknown[]) => {
+      if (isToolBlockedByStaticSecurityPolicy(name, process.env)) {
+        throw new AnalysisInputError(
+          `Tool "${name}" is blocked by REA's static-only security policy because it executes foreign code, mutates the target, or mutates a device. Set REA_ALLOW_RUNTIME_EXECUTION=true in an isolated VM only when runtime execution is explicitly authorized.`,
+          { reason: "security_policy_blocked", tool: name },
+        );
+      }
+      return (callback as (...a: unknown[]) => unknown)(...args);
+    }) as ToolCallback<StandardSchemaWithJSON | undefined>;
+    return super.registerTool(name, config as never, guardedCallback as never);
   }
 
   /** Preserve the SDK transport lifecycle while retaining oversized errors. */

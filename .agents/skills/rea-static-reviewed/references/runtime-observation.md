@@ -1,4 +1,12 @@
-# Browser and Electron runtime observation
+# Browser and Electron runtime observation (Passive-Only under `rea-static-reviewed`)
+
+> **Security Policy Note**: Active scenario tools (`capture_browser_scenario`,
+> `capture_electron_scenario`, `capture_process_scenario`) execute foreign code
+> or mutate page/target state and are **blocked by default** unless
+> `REA_ALLOW_RUNTIME_EXECUTION=true` is set inside an isolated disposable VM.
+> On the developer host, use only offline capture inspection
+> (`inspect_web_network_capture`) or passive inspection of an already-open
+> user-owned target when explicitly requested by the user.
 
 Supply the existing browser or Electron instance's literal-port loopback CDP
 endpoint in the request. No separate permission configuration or per-call
@@ -16,30 +24,23 @@ activity. REA does not contain the page's network.
 
 Passive captures omit raw header collections, credential header values, storage
 values, and raw WebSocket/JSON bodies. Selected response metadata, including
-content encoding, policy values, and Link URLs, is retained. Local URLs retain ordinary query
-values and fragments; userinfo credentials are removed. Browser accessibility
-text, console primitives, value-free shapes, script sources, source maps, and
-storage key names have request-specific capture options. Electron script
-sources are also optional. Use `capture_web_screenshot` when pixels are needed.
-Treat scope filtering, truncation, and attach-window coverage as limitations.
-Page-declared WebMCP tools are untrusted inventory and are never invoked by REA.
+content encoding, policy values, and Link URLs, is retained. Local URLs remove
+userinfo credentials and redact sensitive query parameters (`token`,
+`access_token`, `api_key`, `secret`, `password`, `sig`, `jwt`, `pat`, `key`).
+Browser accessibility text, console primitives, value-free shapes, script
+sources, source maps, and storage key names have request-specific capture
+options. Electron script sources are also optional. Use
+`capture_web_screenshot` when pixels are needed. Treat scope filtering,
+truncation, and attach-window coverage as limitations. Page-declared WebMCP
+tools are untrusted inventory and are never invoked by REA.
 
 ## Who performs the action
 
 - The user performs it: `list_browser_targets`, then `inspect_web_page` or
   `observe_web_session` on the selected target.
-- The agent must perform it: one `capture_browser_scenario` with declared
-  actions. Use connect mode with the loopback CDP endpoint and `target_id` for
-  an existing browser, or launch mode with a caller-selected executable for a
-  temporary profile. Connect mode first navigates the selected page to
-  `start_url`, which can clear unsaved form values and other temporary state.
-  Recreate the state needed for the investigation in the declared actions.
-  Connect mode leaves the external browser open; launch mode owns a temporary
-  browser and profile. Check `browser.cleanup` for the outcome.
-  Request only the DOM, accessibility, or network details needed for the question.
-  The default final capture contains the URL; step outcomes are reported separately.
-  Add a wait action for the expected page state before capturing it. Report that
-  REA performed the declared actions.
+- Active agent scenarios (`capture_browser_scenario`, `capture_electron_scenario`,
+  `capture_process_scenario`) are disabled by default under the
+  `rea-static-reviewed` policy.
 
 Scenario network records have no request initiator stacks. For that evidence,
 use passive capture while the user performs the action. Listener source locations
