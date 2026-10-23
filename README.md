@@ -1,3 +1,12 @@
+> **Security-Hardened Personal Fork (`fbattaglieri-snowflake/rea`)**
+>
+> This is an unofficial security-hardened fork of `morluto/rea` maintained for static-only reverse engineering in Cortex Code (`skills/rea-static-reviewed` and `.agents/skills/rea-static-reviewed`):
+> - **R1 (Process Environment Isolation)**: `ProcessCaptureEnvironment.ts` uses an explicit system-variable allowlist (`ALLOWED_PROCESS_CAPTURE_ENVIRONMENT_KEYS`) instead of copying `process.env`.
+> - **R2 (Extended Credential & URL Query Redaction)**: `CaptureRedaction.ts`, `recordedTransportUrl.ts`, and `browserObservation.ts` redact custom auth headers (`x-api-key`, `x-auth-token`, `x-amz-security-token`, `x-snowflake-authorization`, etc.) and sensitive URL query parameters (`token`, `access_token`, `api_key`, `secret`, `password`, `sig`, `jwt`, `pat`, `key`).
+> - **R3 (Default Static-Only Gate)**: `EvidenceMcpServerCore.ts` blocks all tools with `executesForeignCode`, `mutatesDevice`, or `mutatesTarget` unless `REA_ALLOW_RUNTIME_EXECUTION=true` is explicitly set in an isolated VM.
+> - **R4 (Loopback-Only MCP HTTP)**: `mcpHttpEndpoint.ts` and `serveStreamableHttp.ts` refuse non-loopback binds (`0.0.0.0`, LAN/WAN IPs).
+> - **R5–R8 (Supply-Chain & Skill Hardening)**: Removed `optionalDependencies.frida` and `allowScripts`, enforced `--ignore-scripts` and `start_setup=false` in `install.sh`, removed `@latest` from `src/identity.ts`, and hardened the `rea-static-reviewed` skill.
+
 <div align="center">
 
 **English** · [简体中文](docs/readme/README_zh.md) · [繁體中文](docs/readme/README_zh-TW.md) · [日本語](docs/readme/README_ja.md) · [한국어](docs/readme/README_ko.md) · [Türkçe](docs/readme/README_tr.md) · [Русский](docs/readme/README_ru.md) · [Tiếng Việt](docs/readme/README_vi.md) · [ไทย](docs/readme/README_th.md) · [Deutsch](docs/readme/README_de.md) · [Español](docs/readme/README_es.md) · [Français](docs/readme/README_fr.md) · [Українська](docs/readme/README_uk.md) · [Polski](docs/readme/README_pl.md) · [Português (Brasil)](docs/readme/README_pt-BR.md) · [العربية](docs/readme/README_ar.md) · [فارسی](docs/readme/README_fa.md) · [Bahasa Indonesia](docs/readme/README_id.md) · [Italiano](docs/readme/README_it.md)
