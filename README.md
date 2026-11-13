@@ -6,6 +6,8 @@
 > - **R3 (Default Static-Only Gate)**: `EvidenceMcpServerCore.ts` blocks all tools with `executesForeignCode`, `mutatesDevice`, or `mutatesTarget` unless `REA_ALLOW_RUNTIME_EXECUTION=true` is explicitly set in an isolated VM.
 > - **R4 (Loopback-Only MCP HTTP)**: `mcpHttpEndpoint.ts` and `serveStreamableHttp.ts` refuse non-loopback binds (`0.0.0.0`, LAN/WAN IPs).
 > - **R5–R8 (Supply-Chain & Skill Hardening)**: Removed `optionalDependencies.frida` and `allowScripts`, enforced `--ignore-scripts` and `start_setup=false` in `install.sh`, removed `@latest` from `src/identity.ts`, and hardened the `rea-static-reviewed` skill.
+>
+> **Skill v2 (2026-11-13)**: `rea-static-reviewed` is now a Markdown-only static profile derived from upstream `rea-agents@6.9.0` (commit `d74549e4`), with documentation links pinned to that commit. The code fixes above still apply only to this fork's October 2026 code base, not to upstream 6.9.0, which has no server-side static-only gate; the skill's boundary rules and client approvals are the controls.
 
 <div align="center">
 
